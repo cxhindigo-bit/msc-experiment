@@ -1,0 +1,21 @@
+{
+  "seed": 20260720,
+  "learners": 240,
+  "sessions": 1920,
+  "interactions": 9600,
+  "checkpoints": [
+    10,
+    20
+  ],
+  "turns_per_task": 5,
+  "llm_calls_required": 1920,
+  "learning_rate_range": [
+    0.18,
+    0.3
+  ],
+  "forgetting_rate_range": [
+    0.008,
+    0.022
+  ],
+  "dialogue_status": "not_generated"
+}
