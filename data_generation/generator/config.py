@@ -21,6 +21,10 @@ TASKS_PER_SESSION = 5
 # https://github.com/lmstudio-ai/docs/blob/b02d17517b73c51f520cd5129855cdf30e0728f7/1_developer/3_openai-compat/structured-output.md
 DIALOGUE_TEMPERATURE = 0.7
 
+# 对话生成时在 LM Studio 中关闭 Thinking，使结构化 JSON 返回到 content。
+# Disable Thinking in LM Studio for dialogue generation so structured JSON is returned in content.
+DIALOGUE_THINKING = "disabled"
+
 # 两个预测日期分别使用前 20 项和全部 40 项任务历史
 # The two prediction days use the first 20 and all 40 tasks respectively.
 CHECKPOINTS = [10, 20]

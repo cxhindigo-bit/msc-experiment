@@ -17,5 +17,6 @@
     0.008,
     0.022
   ],
-  "dialogue_status": "not_generated"
+  "dialogue_status": "not_generated",
+  "llm_thinking": "disabled"
 }

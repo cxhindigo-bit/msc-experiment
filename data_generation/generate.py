@@ -15,6 +15,7 @@ from collections import OrderedDict
 
 from .generator.config import (
     DATA_DIR,
+    DIALOGUE_THINKING,
     FORGETTING_RATE_RANGE,
     LEARNING_RATE_RANGE,
     N_LEARNERS,
@@ -64,6 +65,7 @@ def write_gold():
         "learning_rate_range": LEARNING_RATE_RANGE,
         "forgetting_rate_range": FORGETTING_RATE_RANGE,
         "dialogue_status": "not_generated",
+        "llm_thinking": DIALOGUE_THINKING,
     }
     (output_dir / "manifest.json").write_text(
         json.dumps(manifest, indent=2), encoding="utf-8"

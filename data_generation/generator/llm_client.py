@@ -6,7 +6,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from openai import OpenAI
 
-from .config import DIALOGUE_TEMPERATURE
+from .config import DIALOGUE_TEMPERATURE, DIALOGUE_THINKING
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -17,8 +17,8 @@ load_dotenv(PROJECT_ROOT / ".env")
 # LM Studio does not require a real key locally, but the OpenAI client requires a non-empty value.
 LLM_API_KEY = os.environ.get("LLM_API_KEY", "lm-studio").strip()
 
-# 默认值对应实验电脑上 LM Studio 显示的 Qwen3.5 9B 模型标识。
-# The default matches the Qwen3.5 9B model identifier shown by LM Studio.
+# 默认值对应对话生成电脑上 LM Studio 显示的 Qwen3.5 9B 标识。
+# The default matches the Qwen3.5 9B identifier shown by LM Studio.
 LLM_MODEL = os.environ.get("LLM_MODEL", "qwen/qwen3.5-9b").strip()
 
 # LM Studio 默认在本机 1234 端口提供 OpenAI 兼容接口
@@ -104,4 +104,5 @@ def llm_manifest():
         "llm_api_style": "chat_completions",
         "llm_json_mode": "json_schema",
         "llm_temperature": DIALOGUE_TEMPERATURE,
+        "llm_thinking": DIALOGUE_THINKING,
     }
