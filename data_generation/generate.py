@@ -79,11 +79,13 @@ def _dialogue_job(args):
 
     tasks, questions = args
     first = tasks[0]
+    turns, retry_count = generate_session_dialogue(tasks, questions)
     return {
         "learner_id": first["learner_id"],
         "session_id": first["session_id"],
         "day": int(first["day"]),
-        "turns": generate_session_dialogue(tasks, questions),
+        "turns": turns,
+        "_retry_count": retry_count,
     }
 
 
@@ -108,12 +110,15 @@ def write_dialogues():
     ]
 
     sessions = []
+    retry_count = 0
     for index, job in enumerate(jobs, 1):
-        # 一次 LLM 请求生成一个完整会话；llm_client 会按会话缓存成功结果。
-        # One LLM request renders one session; llm_client caches each successful session.
-        sessions.append(_dialogue_job(job))
+        # 每个会话通常请求一次；验证失败时最多尝试三次。
+        # A session normally uses one request; validation failures allow up to three attempts.
+        session = _dialogue_job(job)
+        retry_count += session.pop("_retry_count")
+        sessions.append(session)
         if index % 50 == 0 or index == len(jobs):
-            print(f"sessions {index}/{len(jobs)}")
+            print(f"sessions {index}/{len(jobs)}, retries {retry_count}")
 
     path = output_dir / "raw_dialogues.jsonl"
 
@@ -131,6 +136,8 @@ def write_dialogues():
             "dialogue_status": "complete",
             "dialogue_sessions": len(sessions),
             "dialogue_turns": sum(len(row["turns"]) for row in sessions),
+            "dialogue_retries": retry_count,
+            "dialogue_invalid_attempts": retry_count,
             **llm_manifest(),
         }
     )

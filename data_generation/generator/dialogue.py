@@ -1,7 +1,7 @@
 import json
 import re
 
-from .config import DIALOGUE_TEMPERATURE
+from .config import DIALOGUE_TEMPERATURE, MAX_DIALOGUE_ATTEMPTS
 
 # LM Studio 使用该 Schema 强制一次返回五项任务，每项正好五次发言。
 # LM Studio uses this schema to return five tasks with exactly five utterances each.
@@ -109,23 +109,7 @@ Return exactly this structure:
     return system, prompt, task_plan
 
 
-def generate_session_dialogue(tasks, questions):
-    if len(tasks) != 5:
-        raise ValueError("a session must contain exactly five tasks")
-    system, prompt, task_plan = _prompt(tasks, questions)
-    session_id = tasks[0]["session_id"]
-    data = ask_json(
-        system,
-        prompt,
-        f"mastery-v5-{session_id}",
-        response_schema=SESSION_SCHEMA,
-        # 0.7 采用 LM Studio 官方 Chat Completions 和结构化输出示例中的设置，
-        # 本项目用它为合成对话保留适度措辞变化，但不声称它是最佳值。
-        # 0.7 is adapted from LM Studio's official Chat Completions and structured-output
-        # examples. Here it permits moderate wording variation; it is not claimed as optimal.
-        # https://github.com/lmstudio-ai/docs/blob/b02d17517b73c51f520cd5129855cdf30e0728f7/1_developer/3_openai-compat/structured-output.md
-        temperature=DIALOGUE_TEMPERATURE,
-    )
+def _validate_generated(data, tasks, task_plan, session_id):
     generated_tasks = data["tasks"]
     expected_ids = [task["task_id"] for task in tasks]
     if [task["task_id"] for task in generated_tasks] != expected_ids:
@@ -152,3 +136,39 @@ def generate_session_dialogue(tasks, questions):
             "text": row["text"].strip(),
         } for turn_index, row in enumerate(turns))
     return all_turns
+
+
+def generate_session_dialogue(tasks, questions):
+    if len(tasks) != 5:
+        raise ValueError("a session must contain exactly five tasks")
+    system, prompt, task_plan = _prompt(tasks, questions)
+    session_id = tasks[0]["session_id"]
+    last_error = None
+
+    for attempt in range(MAX_DIALOGUE_ATTEMPTS):
+        # 每次尝试使用独立缓存键。不合格的 JSON 仍保留供检查，
+        # 下一次尝试不会再读取同一个无效缓存。
+        # Each attempt has a separate cache key. Invalid JSON remains available
+        # for inspection, while the next attempt cannot reuse the same invalid entry.
+        cache_key = f"mastery-v5-{session_id}-attempt-{attempt}"
+        try:
+            data = ask_json(
+                system,
+                prompt,
+                cache_key,
+                response_schema=SESSION_SCHEMA,
+                # 0.7 采用 LM Studio 官方结构化输出示例中的设置。
+                # It permits moderate wording variation and is not claimed as optimal.
+                # https://github.com/lmstudio-ai/docs/blob/b02d17517b73c51f520cd5129855cdf30e0728f7/1_developer/3_openai-compat/structured-output.md
+                temperature=DIALOGUE_TEMPERATURE,
+            )
+            turns = _validate_generated(data, tasks, task_plan, session_id)
+            return turns, attempt
+        except (KeyError, TypeError, ValueError) as error:
+            last_error = error
+
+    # 最多三次是硬性上限；到达上限后停止并报告会话，不无限循环。
+    # The fixed attempt limit prevents an infinite retry loop.
+    raise ValueError(
+        f"{session_id} failed after {MAX_DIALOGUE_ATTEMPTS} attempts: {last_error}"
+    )

@@ -25,6 +25,10 @@ DIALOGUE_TEMPERATURE = 0.7
 # Disable Thinking in LM Studio for dialogue generation so structured JSON is returned in content.
 DIALOGUE_THINKING = "disabled"
 
+# 每个会话最多生成三次；连续三次不合格后停止，不会无限重试。
+# Try each session at most three times; stop after three invalid attempts.
+MAX_DIALOGUE_ATTEMPTS = 3
+
 # 两个预测日期分别使用前 20 项和全部 40 项任务历史
 # The two prediction days use the first 20 and all 40 tasks respectively.
 CHECKPOINTS = [10, 20]
