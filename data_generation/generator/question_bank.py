@@ -1,6 +1,7 @@
 """The 24 fraction questions used by the mastery experiment."""
 
 
+# Written to data/questions.csv by generate.write_gold().
 QUESTIONS = [
     {"id": "Q0001", "concept": "F1", "text": "What does the fraction 3/8 mean?", "correct_answer": "three out of eight equal parts", "incorrect_answer": "eight out of three parts", "feedback_hint": "Ask which number gives all equal parts and which gives the selected parts."},
     {"id": "Q0002", "concept": "F1", "text": "A bar has 6 equal parts and 2 are shaded. What fraction is shaded?", "correct_answer": "2/6", "incorrect_answer": "6/2", "feedback_hint": "Ask which number counts all parts and which counts the shaded parts."},

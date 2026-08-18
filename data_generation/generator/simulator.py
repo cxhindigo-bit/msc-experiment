@@ -179,12 +179,13 @@ def simulate_dataset():
         profiles.append(learner["profile"])
         interactions.extend(learner["interactions"])
         mastery_rows.extend(learner["mastery"])
+    # These collections are written to data/ by generate.write_gold().
     return {
-        "profiles": profiles,
+        "profiles": profiles,  # data/learner_profiles.csv
         "splits": [
             {"learner_id": learner_id, "split": split_map[learner_id]}
             for learner_id in learner_ids
-        ],
-        "interactions": interactions,
-        "mastery": mastery_rows,
+        ],  # data/splits.csv
+        "interactions": interactions,  # data/gold_interactions.csv
+        "mastery": mastery_rows,  # data/gold_mastery.csv
     }
