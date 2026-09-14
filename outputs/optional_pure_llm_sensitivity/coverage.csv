@@ -1,0 +1,4 @@
+condition,valid_predictions,expected_predictions,missing_predictions,extra_predictions,complete_learners,expected_learners,coverage
+original-mini,768,768,0,0,48,48,1.0
+improved-mini,768,768,0,0,48,48,1.0
+improved-full,768,768,0,0,48,48,1.0
