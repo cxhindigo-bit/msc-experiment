@@ -1,0 +1,4 @@
+system,valid_predictions,expected_predictions,missing_predictions,extra_predictions,complete_learners,expected_learners,coverage
+Pure-LLM,768,768,0,0,48,48,1.0
+LLM-SimpleKT,768,768,0,0,48,48,1.0
+gold-SimpleKT,768,768,0,0,48,48,1.0

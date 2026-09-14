@@ -1,0 +1,6 @@
+{
+  "llm_model": "gpt-4.1-mini",
+  "llm_base_url": "https://api.openai.com/v1",
+  "llm_thinking": "not_applicable",
+  "temperature": 0.0
+}
