@@ -1,0 +1,11 @@
+.env
+.venv/
+__pycache__/
+*.py[cod]
+.DS_Store
+
+data_generation/cache/
+data_generation/logs/
+outputs/cache/
+outputs/**/cache/
+exploratory_runs/

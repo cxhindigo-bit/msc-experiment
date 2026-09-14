@@ -14,7 +14,7 @@ source .venv/bin/activate
 
 ```dotenv
 OPENAI_API_KEY=...
-LLM_MODEL=gpt-4.1-nano
+DIALOGUE_LLM_MODEL=gpt-4.1-nano
 LLM_BASE_URL=https://api.openai.com/v1
 ```
 

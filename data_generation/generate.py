@@ -31,12 +31,11 @@ def _write_csv(path, rows):
 
 def write_gold():
     """Generate and save LLM-independent gold data."""
-    # Create the structured experimental baseline without calling an LLM.
     output_dir = DATA_DIR
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Gold data define experimental conditions and reference answers, not dialogue text.
-    # Fix task order, initial labels, and reference probabilities before dialogue generation.
+    # Design item: Gold-first data construction
+    # Current setting: Fix questions, initial-answer labels, and reference probabilities before generating dialogue.
     data = simulate_dataset()
     validate_gold(data)
 
@@ -46,7 +45,8 @@ def write_gold():
     _write_csv(output_dir / "gold_interactions.csv", data["interactions"])
     _write_csv(output_dir / "gold_mastery.csv", data["mastery"])
 
-    # Record dataset scale and generation settings.
+    # Design item: Generation record
+    # Current setting: Save the seed, scale, parameter ranges, and dialogue status in the manifest.
     manifest = {
         "seed": SEED,
         "learners": len(data["profiles"]),
@@ -89,12 +89,12 @@ def write_dialogues():
 
     output_dir = DATA_DIR
 
-    # Read gold data without changing its labels.
+    # Dialogue generation reads the completed gold interactions without regenerating them.
     interactions = read_csv(output_dir / "gold_interactions.csv")
     questions = {row["id"]: row for row in QUESTIONS}
     grouped_tasks = OrderedDict()
     for task in interactions:
-        # Preserve the learner, session, and task order from the CSV.
+        # Preserve the session and task order already stored by the simulator.
         grouped_tasks.setdefault(task["session_id"], []).append(task)
     jobs = [
         (tasks, questions)
@@ -104,7 +104,6 @@ def write_dialogues():
     sessions = []
     retry_count = 0
     for index, job in enumerate(jobs, 1):
-        # Retry a session only after validation failure.
         session = _dialogue_job(job)
         retry_count += session.pop("_retry_count")
         sessions.append(session)
@@ -113,11 +112,13 @@ def write_dialogues():
 
     path = output_dir / "raw_dialogues.jsonl"
 
-    # Write the final file after all sessions complete; reuse cached sessions on restart.
+    # Design item: Dialogue file structure
+    # Current setting: 1,920 sessions, five tasks per session, and five utterances per task.
     with path.open("w", encoding="utf-8") as handle:
         for session in sessions:
             handle.write(json.dumps(session, ensure_ascii=False) + "\n")
-    # Recheck gold-constrained dialogue invariants before completion.
+    # Design item: Final dialogue acceptance
+    # Current setting: Validate the complete dialogue file against the gold tasks before marking it complete.
     validate_dialogue_file(path, interactions=interactions, questions=questions)
 
     manifest_path = output_dir / "manifest.json"
@@ -145,7 +146,6 @@ def main():
 
     tasks = N_LEARNERS * len(SESSION_DAYS) * TASKS_PER_SESSION
     if args.command == "plan":
-        # Report the expected scale without writing files.
         print(
             {
                 "learners": N_LEARNERS,

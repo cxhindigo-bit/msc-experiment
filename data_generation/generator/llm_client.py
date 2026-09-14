@@ -18,11 +18,11 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 CACHE_DIR = PROJECT_ROOT / "data_generation" / "cache"
 load_dotenv(PROJECT_ROOT / ".env")
 
-# Accept either standard or pipeline-specific API-key configuration.
 LLM_API_KEY = os.environ.get("LLM_API_KEY", os.environ.get("OPENAI_API_KEY", "")).strip()
 
-# Environment variables override the default model.
-LLM_MODEL = os.environ.get("LLM_MODEL", "gpt-4.1-nano").strip()
+# Design item: Dialogue-generation model
+# Current setting: gpt-4.1-nano by default, independently configurable from the prediction pipelines.
+LLM_MODEL = os.environ.get("DIALOGUE_LLM_MODEL", "gpt-4.1-nano").strip()
 
 LLM_BASE_URL = os.environ.get("LLM_BASE_URL", "https://api.openai.com/v1").strip()
 
@@ -33,27 +33,22 @@ def _client():
 
 
 def _cache_path(system, prompt, cache_key, response_schema, temperature):
-    # Reuse cached responses only when inputs and settings match.
-    # See Nextflow's reproducible workflow caching: https://doi.org/10.1038/nbt.3820
-    # Stable serialization gives equivalent schemas the same fingerprint.
+    # Include request-defining settings so a changed request uses a different cache file.
     schema_text = json.dumps(response_schema, sort_keys=True)
 
-    # Changes to generation settings produce a new cache entry.
     digest = hashlib.sha256(
         f"{LLM_MODEL}\n{LLM_BASE_URL}\n{temperature}\n{DIALOGUE_MAX_TOKENS}\n{schema_text}\n{system}\n{prompt}".encode()
     ).hexdigest()[:20]
 
-    # cache_key identifies the session; digest identifies its configuration.
     return CACHE_DIR / f"{cache_key}--{digest}.json"
 
 
 def ask_json(system, prompt, cache_key, response_schema, temperature):
     path = _cache_path(system, prompt, cache_key, response_schema, temperature)
-    # Read cached responses before making a request.
     if path.exists():
         return json.loads(path.read_text(encoding="utf-8"))
 
-    # The request uses the OpenAI Chat Completions JSON-schema format.
+    # Send the configured model, schema, temperature, and output limit as one request.
     response = _client().chat.completions.create(
         model=LLM_MODEL,
         messages=[
@@ -78,8 +73,7 @@ def ask_json(system, prompt, cache_key, response_schema, temperature):
 
 
 def llm_manifest():
-    # Returned fields are added to data/manifest.json by generate.write_dialogues().
-    # project-specific reproducibility record
+    # Record the dialogue-generation settings used for the saved dataset.
     return {
         "llm_backend": "openai",
         "llm_model": LLM_MODEL,

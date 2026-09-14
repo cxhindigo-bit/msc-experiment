@@ -4,45 +4,54 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 DATA_DIR = ROOT.parent / "data"
 
-# Fixed seed for reproducible data generation.
+# Design item: Master random seed
+# Current setting: 20260720.
 SEED = 20260720
 
-# 240 learners, eight sessions each, five tasks per session.
+# Design item: Dataset scale
+# Current setting: 240 simulated learners.
 N_LEARNERS = 240
+# Design item: Session schedule
+# Current setting: Days 1, 3, 6, 8, 11, 13, 16, and 18; five tasks per session and 40 tasks per learner.
 SESSION_DAYS = [1, 3, 6, 8, 11, 13, 16, 18]
 TASKS_PER_SESSION = 5
 
-# OpenAI dialogue-generation settings.
+# Design item: Dialogue-generation request
+# Current setting: Temperature 0.7, maximum 1,600 output tokens, and at most three attempts per session.
 DIALOGUE_TEMPERATURE = 0.7
-
-# Leave room for a full session while limiting excessive output.
 DIALOGUE_MAX_TOKENS = 1600
-
-# OpenAI Chat Completions generation does not use a provider-specific thinking setting.
 DIALOGUE_THINKING = "not_applicable"
 
-# The program writes the gold initial answer; the LLM generates the remaining dialogue.
+# Design item: Initial-answer source
+# Current setting: The program writes the preset gold answer into the second utterance.
 DIALOGUE_INITIAL_ANSWER_MODE = "deterministic_injection"
 
-# Maximum dialogue-generation attempts per session.
 MAX_DIALOGUE_ATTEMPTS = 3
 
-# Prediction days use the first 20 and all 40 tasks, respectively.
+# Design item: Checkpoint dates
+# Current setting: Days 10 and 20, each two days after the latest session.
 CHECKPOINTS = [10, 20]
 
-# The eight fraction concepts predicted separately in the experiment.
+# Design item: Concept set
+# Current setting: F1–F8, giving eight probabilities per checkpoint and 16 per learner.
 CONCEPTS = [f"F{i}" for i in range(1, 9)]
 
-# Each learner keeps the same rates across all tasks.
+# Design item: Learning rate
+# Current setting: Sample once per learner from U(0.18, 0.30), then keep it fixed.
 LEARNING_RATE_RANGE = (0.18, 0.30)
+# Design item: Forgetting rate
+# Current setting: Sample once per learner from U(0.008, 0.022), then keep it fixed.
 FORGETTING_RATE_RANGE = (0.008, 0.022)
 
-# Initial correct-answer probability range.
+# Design item: Initial concept probability
+# Current setting: Sample each learner–concept value from U(0.10, 0.35).
 INITIAL_MASTERY = (0.10, 0.35)
 
-# Incorrect responses receive 20% of the correct-response learning gain.
+# Design item: Learning after an incorrect initial answer
+# Current setting: Use 20% of the learning gain applied after a correct answer.
 INCORRECT_LEARNING_FACTOR = 0.20
 
-# Keep generated probabilities away from 0 and 1.
+# Design item: Probability bounds
+# Current setting: Clip simulator probabilities to 0.05–0.95.
 MASTERY_MIN = 0.05
 MASTERY_MAX = 0.95

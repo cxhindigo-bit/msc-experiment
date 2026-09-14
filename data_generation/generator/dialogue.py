@@ -5,7 +5,8 @@ import re
 from .config import DIALOGUE_TEMPERATURE, MAX_DIALOGUE_ATTEMPTS
 
 
-# Require five tasks with five utterances each.
+# Design item: Dialogue structure
+# Current setting: Five tasks per session and five utterances per task in teacher–student–teacher–student–teacher order.
 SESSION_SCHEMA = {
     "type": "object",
     "properties": {
@@ -59,7 +60,7 @@ def ask_json(system, prompt, cache_key, response_schema, temperature):
 
 def _contains_answer(text, answer):
     answer = answer.strip()
-    # Do not match a whole-number answer against a fraction component.
+    # Match a standalone integer so, for example, answer "6" is not found inside "6/10".
     if re.fullmatch(r"\d+", answer):
         return re.search(
             rf"(?<![\w/]){re.escape(answer)}(?![\w/])",
@@ -72,6 +73,8 @@ def _contains_answer(text, answer):
 
 
 def _prompt(tasks, questions):
+    # Design item: LLM role in dialogue generation
+    # Current setting: Draft the dialogue wording; the program later fixes the initial answer and required closure content.
     generation_plan = []
     validation_plan = []
     for task in tasks:
@@ -103,6 +106,8 @@ def _prompt(tasks, questions):
         "curious and Socratic",
         "supportive and reflective",
     )
+    # Design item: Wording tone
+    # Current setting: Select one of four tones deterministically from the session ID.
     style = tutoring_styles[
         hashlib.sha256(session_id.encode("utf-8")).digest()[0] % len(tutoring_styles)
     ]
@@ -144,6 +149,8 @@ def _initial_answer_text(answer):
 
 
 def _validate_generated(data, tasks, validation_plan, session_id):
+    # Design item: Per-session dialogue validation
+    # Current setting: Preserve task order, question text, five-speaker pattern, fixed initial answer, and correction closure.
     generated_tasks = data["tasks"]
     expected_ids = [task["task_id"] for task in tasks]
     if [task["task_id"] for task in generated_tasks] != expected_ids:
@@ -161,7 +168,8 @@ def _validate_generated(data, tasks, validation_plan, session_id):
             raise ValueError(f"{task['task_id']} changed the supplied question")
         required = planned["required_initial_answer"]
         correct_answer = planned["correct_answer"]
-        # A comparison question can already contain the correct fraction.
+        # Design item: Correction after an incorrect initial answer
+        # Current setting: Turn 3 hints, turn 4 contains the complete answer, and turn 5 confirms without another question.
         answer_is_new_to_question = not _contains_answer(
             planned["question_text"], correct_answer
         )
@@ -188,6 +196,7 @@ def _validate_generated(data, tasks, validation_plan, session_id):
                 if turns[4]["text"].strip()
                 else f"That is correct: {correct_answer}."
             )
+        # Replace model wording with the fixed gold initial answer.
         turns[1]["text"] = _initial_answer_text(required)
 
         first_turn = task_index * 5 + 1
@@ -198,7 +207,6 @@ def _validate_generated(data, tasks, validation_plan, session_id):
             "speaker": row["speaker"],
             "text": row["text"].strip(),
         } for turn_index, row in enumerate(turns))
-    # Returned turns are written to data/raw_dialogues.jsonl by generate.write_dialogues().
     return all_turns
 
 
@@ -210,7 +218,7 @@ def generate_session_dialogue(tasks, questions):
     last_error = None
 
     for attempt in range(MAX_DIALOGUE_ATTEMPTS):
-        # Use a separate cache entry for each retry.
+        # A failed validation uses a new cache key, up to the configured attempt limit.
         cache_key = f"mastery-v5-{session_id}-attempt-{attempt}"
         try:
             data = ask_json(
@@ -218,7 +226,6 @@ def generate_session_dialogue(tasks, questions):
                 prompt,
                 cache_key,
                 response_schema=SESSION_SCHEMA,
-                # Allow moderate wording variation.
                 temperature=DIALOGUE_TEMPERATURE,
             )
             turns = _validate_generated(data, tasks, validation_plan, session_id)
@@ -226,7 +233,6 @@ def generate_session_dialogue(tasks, questions):
         except (KeyError, TypeError, ValueError) as error:
             last_error = error
 
-    # Stop after the fixed retry limit.
     raise ValueError(
         f"{session_id} failed after {MAX_DIALOGUE_ATTEMPTS} attempts: {last_error}"
     )
