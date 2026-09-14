@@ -1,0 +1,7 @@
+openai>=2.0.0,<3.0.0
+python-dotenv>=1.0
+numpy>=1.26,<3.0
+torch>=2.2
+einops>=0.8,<1.0
+entmax>=1.3,<2.0
+pykt-toolkit @ git+https://github.com/pykt-team/pykt-toolkit.git@f766468f1d3083f737e5fde22a17a08de0d52552
